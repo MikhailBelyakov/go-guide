@@ -8,3 +8,7 @@ import (
 type Repository interface {
 	SaveArticle(ctx context.Context, model article.Entity) error
 }
+
+type Validator interface {
+	Validate(ctx context.Context, dto CreateDTO) error
+}

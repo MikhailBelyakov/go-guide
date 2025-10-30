@@ -3,7 +3,6 @@ package article
 import (
 	infra "arch/internal/infrastructure/article"
 	"context"
-	"errors"
 	"github.com/google/uuid"
 )
 
@@ -13,6 +12,7 @@ type CreateDTO struct {
 
 type UseCase struct {
 	repository Repository
+	validator  Validator
 }
 
 func New(repository Repository) *UseCase {
@@ -20,8 +20,8 @@ func New(repository Repository) *UseCase {
 }
 
 func (uc *UseCase) Handler(ctx context.Context, dto CreateDTO) (*infra.Entity, error) {
-	if dto.Title == "" {
-		return nil, errors.New("title cannot be empty")
+	if err := uc.validator.Validate(ctx, dto); err != nil {
+		return nil, err
 	}
 
 	article := infra.NewArticleModel(

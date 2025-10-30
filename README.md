@@ -50,10 +50,12 @@ usecase
 └─ article
    ├─ create
    │  ├─ dependency.go
-   │  └─ handler.go
+   │  ├─ handler.go
+   │  └─ validator.go
    └─ one
       ├─ dependency.go
-      └─ handler.go
+      ├─ handler.go
+      └─ validator.go
 pkg
 
 ```
@@ -274,17 +276,17 @@ type CreateDTO struct {
 
 type UseCase struct {
 	repository Repository
+	validator Validator
 }
 
-func New(repository Repository) *UseCase {
-	return &UseCase{repository: repository}
+func New(repository Repository, validator Validator) *UseCase {
+	return &UseCase{repository: repository, validator: validator}
 }
 
 func (uc *UseCase) Handler(ctx context.Context, dto CreateDTO) (*infra.Entity, error) {
-	if dto.Title == "" {
-		return nil, errors.New("title cannot be empty")
-	}
-
+	if err := uc.validator.Validate(ctx, dto); err != nil {
+		return nil, err
+    }
 	article := infra.NewArticleModel(
 		uuid.New().String(),
 		dto.Title,
@@ -310,5 +312,37 @@ import (
 type Repository interface {
 	SaveArticle(ctx context.Context, model article.Entity) error
 }
+
+
+type Validator interface {
+	Validate(ctx context.Context, dto CreateDTO) error
+}
+
+```
+
+**UseCase Validator (usecase/article/create/validator.go)**
+```go
+package article
+
+import (
+	"context"
+	"errors"
+)
+
+type validator struct {
+}
+
+func NewValidator() Validator {
+	return &validator{}
+}
+
+func (v *validator) Validate(_ context.Context, dto CreateDTO) error {
+	if dto.Title == "" {
+		return errors.New("title cannot be empty")
+	}
+
+	return nil
+}
+
 ```
 
